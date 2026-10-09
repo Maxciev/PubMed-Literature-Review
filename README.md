@@ -39,7 +39,7 @@ Or just describe what you need — the skill triggers on natural phrasing:
 I'm writing a paper on scaphoid nonunion — help me map the literature.
 ```
 
-Claude will ask a few scoping questions (population, timeframe, study designs), then run the search and deliver the .docx.
+Claude runs a first reconnaissance search, proposes a PICO breakdown into five sub-areas, then asks you to confirm the search depth (5, 10 or 20 searches), the sub-areas and the output language (English, French or bilingual). It then runs the searches, verifies every cited reference against the PubMed results of the session, and delivers the .docx.
 
 ## Example output
 
@@ -50,6 +50,14 @@ See [`examples/`](examples/) for a full generated review.
 - **Not a PRISMA systematic review.** No dual screening, no risk-of-bias assessment, no meta-analysis. It is an exploratory evidence map — use it to decide *whether* a systematic review is warranted, not as a substitute for one.
 - **Not a substitute for reading the papers.** The synthesis is generated from abstracts and metadata.
 - **Verify every reference before citing it.** LLM-generated citations require checking against the source. This is on you.
+
+## Source
+
+The skill's instructions are in [`pubmed-literature-review/SKILL.md`](pubmed-literature-review/SKILL.md). The `.skill` file is the same folder zipped for upload.
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Citation
 

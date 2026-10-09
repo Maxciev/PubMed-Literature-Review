@@ -5,7 +5,7 @@ authors:
     given-names: "Maxime"
     orcid: "https://orcid.org/0000-0001-9736-166X"
 title: "PubMed-Literature-Review"
-version: 1.0.0
-date-released: 2026-07-14
-url: "https://github.com/Maxciev/PubMed-Litterature-Review"
+version: 1.1.0
+date-released: 2026-10-09
+url: "https://github.com/Maxciev/PubMed-Literature-Review"
 license: MIT
