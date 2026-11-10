@@ -41,10 +41,6 @@ I'm writing a paper on scaphoid nonunion — help me map the literature.
 
 Claude runs a first reconnaissance search, proposes a PICO breakdown into five sub-areas, then asks you to confirm the search depth (5, 10 or 20 searches), the sub-areas and the output language (English, French or bilingual). It then runs the searches, verifies every cited reference against the PubMed results of the session, and delivers the .docx.
 
-## Example output
-
-See [`examples/`](examples/) for a full generated review.
-
 ## What it is not
 
 - **Not a PRISMA systematic review.** No dual screening, no risk-of-bias assessment, no meta-analysis. It is an exploratory evidence map — use it to decide *whether* a systematic review is warranted, not as a substitute for one.
@@ -62,6 +58,10 @@ See [`CHANGELOG.md`](CHANGELOG.md).
 ## Citation
 
 If this skill contributes to published work, cite it — see [`CITATION.cff`](CITATION.cff) or use the "Cite this repository" button in the sidebar.
+
+## Acknowledgements
+
+Inspired by an original idea from [Consensus](https://consensus.app), adapted here to PubMed and clinical practice.
 
 ## Author
 
