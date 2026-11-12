@@ -16,14 +16,22 @@ Built for clinicians and researchers who need depth and strategy, not a list of 
 ## Requirements
 
 - Claude with skills support (Claude Desktop or claude.ai)
-- The **PubMed connector enabled** in your Claude settings — the skill will not work without it
-  - `Settings` → `Connectors` → enable **PubMed**
+- PubMed access, either:
+  - the **PubMed connector** — **required on claude.ai**: `Settings` → `Connectors` → enable **PubMed**, then
+    start a new conversation; or
+  - **code execution with network access to NCBI**, e.g. Claude Code on your own machine: without the
+    connector, the skill queries PubMed through the bundled script
+    [`scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py) (NCBI E-utilities, Python standard
+    library only). The claude.ai code sandbox refused NCBI (HTTP 403) in testing, so the script does not
+    replace the connector there.
 
 ## Installation
 
 1. Download [`pubmed-literature-review.skill`](https://github.com/Maxciev/PubMed-Literature-Review/raw/main/pubmed-literature-review.skill) — always the current version (see [`CHANGELOG.md`](CHANGELOG.md))
-2. In Claude: `Settings` → `Capabilities` → `Skills` → **Upload skill**
-3. Select the `.skill` file
+2. In Claude: `Customize` → `Skills` ([claude.ai/customize/skills](https://claude.ai/customize/skills)) → **+** → **Create skill** → **Upload a skill**
+3. Select the `.skill` file. If the file picker only accepts ZIP files, rename it to `pubmed-literature-review.zip` — it is the same archive.
+
+Skills need code execution: `Settings` → `Capabilities` → **Code execution and file creation** (labelled **Create and edit files** in the newer layout).
 
 ## Usage
 
@@ -49,7 +57,7 @@ Claude runs a first reconnaissance search, proposes a PICO breakdown into five s
 
 ## Source
 
-The skill's instructions are in [`pubmed-literature-review/SKILL.md`](pubmed-literature-review/SKILL.md). The `.skill` file is the same folder zipped for upload.
+The skill's instructions are in [`pubmed-literature-review/SKILL.md`](pubmed-literature-review/SKILL.md). The fallback PubMed client is in [`pubmed-literature-review/scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py). The `.skill` file is the same folder zipped for upload.
 
 ## Changelog
 

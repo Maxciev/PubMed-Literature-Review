@@ -37,8 +37,12 @@ below. There is no `references/` folder to read.
 
 ## Requirements
 
-- **PubMed connector enabled** in the user's Claude settings. Without it, no searches can run — check early
-  and tell the user how to enable it rather than failing mid-workflow.
+- **PubMed access**, one of:
+  - the **PubMed connector** (required on claude.ai), or
+  - the bundled **`scripts/pubmed.py`** (NCBI E-utilities, Python standard library only), which needs code
+    execution with network access to `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov`. That is the case
+    in Claude Code on the user's machine; the claude.ai code sandbox has been seen to refuse NCBI (HTTP 403).
+  Check which one works before anything else (see Tools) rather than failing mid-workflow.
 - **Optional:** a code-execution environment (Claude Code, Cowork, or any surface with bash + file output)
   for the Word `.docx` deliverable. Without it, the skill degrades gracefully to Markdown — see Phase 4.
 
@@ -46,13 +50,23 @@ below. There is no `references/` folder to read.
 
 ## Tools
 
+**Choose the backend once, before any question to the user.** If the PubMed connector tools are available,
+use them. If not, probe the bundled script with one call (`search "<core topic>" --max 1`). If neither works,
+stop (see Error handling). Record the backend used in the audit log.
+
+**Always pass `sort=relevance`** (script: `--sort relevance`, the default) except for deliberate recency
+searches (`pub_date`). Without `sort`, the connector returns the **most recent** records first, so the top 20
+are not the most relevant ones.
+
+### Connector
+
 PubMed tools are deferred. Load all three in a single tool search before the first call. In Claude Code /
 Cowork the query is `select:mcp__PubMed__search_articles,mcp__PubMed__get_article_metadata,mcp__PubMed__convert_article_ids`;
 on claude.ai search `"pubmed search articles"` (tools named `PubMed:search_articles` etc.).
 
 - **`search_articles`** — returns a list of **PMIDs only** (plus `total_count`, `returned_count`,
   `query_translation`, `has_more`). Params: `query`, `max_results` (use `20`), `sort` (`relevance` |
-  `pub_date` | …), `date_from` / `date_to` (see caveat below).
+  `pub_date` | …), `date_from` / `date_to` (see caveat below), `retstart` (pagination offset).
 - **`get_article_metadata`** — takes an array of PMIDs, returns titles, abstracts, authors, affiliations,
   journal, year, DOI, MeSH, article types. **This is where the actual content comes from.**
 - **`convert_article_ids`** — PMID ↔ PMCID ↔ DOI when needed.
@@ -61,6 +75,32 @@ Because search returns only PMIDs, the loop is always: **search → collect PMID
 metadata for the relevant new PMIDs → read abstracts.** Do not fetch metadata for every PMID from every
 broad search — screen by title / journal / recency first, then fetch the strong candidates in one or two
 batches.
+
+### Script fallback (no connector)
+
+`scripts/pubmed.py` sits in this skill's folder, next to this SKILL.md. It prints JSON shaped like the
+connector's results:
+
+```bash
+S=<this skill's folder>/scripts/pubmed.py
+python3 "$S" search "scaphoid nonunion AND vascularized bone graft" --max 20 --sort relevance
+python3 "$S" search "<query>" --max 20 --sort pub_date --date-from 2020 --date-to 2026
+python3 "$S" metadata 39531592 27761662 --abstract-chars 1500
+python3 "$S" convert 40391547 10.1016/j.jhsa.2023.08.008 PMC11600843
+```
+
+- `search` returns `pmids`, `total_count`, `returned_count`, `query_translation`, `has_more`; `--retstart`
+  pages through results.
+- `metadata` returns per article: title, abstract, authors, affiliations, journal / ISO abbreviation,
+  `year` (**print** year), `epub_date` (online-first date), volume, issue, pages, DOI, PMCID, publication
+  types, MeSH terms; plus `not_found`. Use `--abstract-chars` to save context during screening.
+- `convert` maps PMID / PMCID / DOI. A PMID outside PMC returns no DOI here: take the DOI from `metadata`.
+- On error it prints `{"error": ...}` to stderr and exits 1. A network error on every call means the sandbox
+  cannot reach NCBI: tell the user (see Error handling).
+- It throttles itself to NCBI's limit (3 requests/s; 10/s if `NCBI_API_KEY` is set). Run calls one at a time.
+- Save each raw JSON output to a file in the working directory: Phase 5 provenance reads the PMIDs from them.
+
+### Budget
 
 **Cap metadata fetches at roughly 100 unique PMIDs across the whole session.** A deep dive can surface 300+
 PMIDs; fetching them all will exhaust the context before the document is written. Screen hard, fetch
@@ -107,10 +147,13 @@ PubMed expands your words into a long Boolean translation. A few hard-won rules:
   (search the entity's actual name).
 - **Avoid over-broad anatomical terms.** A word like "hand" pulls in wrist, long-bone and unrelated material;
   use the precise structure ("metacarpal", "phalanx").
-- **Date filters are unreliable on this endpoint.** `date_from` / `date_to` frequently do **not** constrain
-  results here. Don't depend on them for era-gating. Instead get historical depth from general
-  review/treatment searches (which surface old foundational papers) and recency from `sort=pub_date` plus
-  reading publication years. Note this limitation in the audit log if it bit you.
+- **Check that date filters were applied.** When `date_from` / `date_to` work, `query_translation` ends with a
+  `[Date - Publication]` range. If it does not, the filter was ignored: don't depend on it for era-gating; get
+  historical depth from general review/treatment searches and recency from `sort=pub_date` plus reading
+  publication years, and note it in the audit log.
+- **Watch the translation for gene or chemical hijacks.** Short common words can map to a gene symbol:
+  "cast" becomes `"polr1g protein human"[Supplementary Concept] OR "cast"`. Read `query_translation` and use
+  a MeSH term or a field tag instead (`"casts, surgical"[MeSH Terms]`, `cast[tiab]`).
 - **Use field tags and Boolean when precision helps**: `Smith J[Author]`, `[Title]`,
   `systematic review[Publication Type]`, `meta-analysis[Publication Type]`, `("A" OR "B") AND ("C")`.
   Author searches are great for following a research group.
@@ -118,9 +161,11 @@ PubMed expands your words into a long Boolean translation. A few hard-won rules:
   recurring authors point to a seminal series that has not surfaced, recover it with an `[Author]` search and
   record the retrieval gap in the audit log.
 - **Read `total_count` vs `returned_count`.** If `total_count` ≫ `returned_count`, there is more to mine —
-  **this endpoint exposes no pagination offset**, so narrow the query with field tags or Boolean, or raise
-  `max_results`. If repeated searches only return PMIDs you've already seen, the corpus is **saturated** —
-  say so and stop; that's a coverage finding, not a failure.
+  prefer narrowing the query with field tags or Boolean; page with `retstart` only when the narrowed set is
+  still worth reading. If repeated searches only return PMIDs you've already seen, the corpus is
+  **saturated** — say so and stop; that's a coverage finding, not a failure.
+- **Relevance ranking is not stable on small result sets.** Two identical searches can return the same set in
+  a different order. Dedupe by PMID, never by position.
 
 ---
 
@@ -147,8 +192,19 @@ On a tool failure: wait briefly, retry once. Log which search failed and whether
 consecutive failures, stop and tell the user what succeeded so far and ask how to proceed. Never silently
 skip a failed search — note it as a coverage gap.
 
-If the PubMed connector is not available at all, stop immediately and tell the user to enable it
-(`Settings` → `Connectors` → `PubMed`). Do not attempt to substitute another source.
+If neither the PubMed connector nor the script works (no connector, and no code execution or no network access
+to NCBI from it), stop immediately, before Phase 1, and tell the user:
+
+1. **Recommended:** enable or reconnect the PubMed connector (`Settings` → `Connectors` → `PubMed`; no sign-in
+   needed), then start a **new conversation**: connector tools only load when a conversation starts.
+2. Or allow `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov` for code execution, if their plan exposes a
+   network allowlist (on organization plans an admin controls it), or run the skill in Claude Code.
+
+Do not substitute another source (web search, memory, another literature connector) — the review's
+provenance depends on PubMed PMIDs and query translations.
+
+The connector can answer `RATE_LIMIT_EXCEEDED` with a `retryAfter`: wait that long, then retry; it does not
+count as a failure.
 
 ---
 
@@ -397,7 +453,8 @@ apology, no elaboration.
 4. **Claims:** spot-check that each number in Sections 1–4 matches the screened abstract of the paper it is
    attributed to, and that it is not attributed to the wrong implant or population.
 5. **Years:** list the records whose online-first year differs from the print year so the user can fix them
-   before formatting references.
+   before formatting references. With the script, compare `year` (print) with `epub_date`; the connector's
+   `publication_date` is usually the online-first date.
 
 ### Delivery
 
