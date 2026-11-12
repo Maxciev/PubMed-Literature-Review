@@ -26,8 +26,10 @@ Built for clinicians and researchers who need depth and strategy, not a list of 
 ## Installation
 
 1. Download [`pubmed-literature-review.skill`](https://github.com/Maxciev/PubMed-Literature-Review/raw/main/pubmed-literature-review.skill) — always the current version (see [`CHANGELOG.md`](CHANGELOG.md))
-2. In Claude: `Settings` → `Capabilities` → `Skills` → **Upload skill**
-3. Select the `.skill` file
+2. In Claude: `Customize` → `Skills` ([claude.ai/customize/skills](https://claude.ai/customize/skills)) → **+** → **Create skill** → **Upload a skill**
+3. Select the `.skill` file. If the file picker only accepts ZIP files, rename it to `pubmed-literature-review.zip` — it is the same archive.
+
+Skills need code execution: `Settings` → `Capabilities` → **Code execution and file creation** (labelled **Create and edit files** in the newer layout).
 
 ## Usage
 
