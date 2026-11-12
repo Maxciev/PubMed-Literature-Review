@@ -1,0 +1,48 @@
+# Creates the GitHub release vX.Y.Z (with the .skill attached, marked Latest) when CITATION.cff on main
+# carries a version that has no release yet. Also runnable by hand: Actions -> Release skill -> Run workflow.
+name: Release skill
+
+on:
+  push:
+    branches: [main]
+    paths: [CITATION.cff, .github/workflows/release.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from CITATION.cff
+        id: v
+        run: |
+          ver=$(sed -n 's/^version: *//p' CITATION.cff | tr -d "\"' \r")
+          [ -n "$ver" ] || { echo "No version in CITATION.cff"; exit 1; }
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already released
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "v${{ steps.v.outputs.version }} is already released: nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check, release and verify
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SRC_DIR: ${{ github.workspace }}
+        run: bash .github/scripts/release.sh "${{ github.repository }}" "${{ steps.v.outputs.version }}"
