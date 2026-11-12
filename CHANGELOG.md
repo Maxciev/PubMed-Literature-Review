@@ -20,6 +20,7 @@
 - Removed the claims that date filters never work and that the endpoint has no pagination offset: both
   work on the connector and the script (tested on one query each). The skill now checks the translation
   instead of assuming the filter failed.
+- README: skill upload moved to `Customize` → `Skills` on claude.ai.
 
 ## 1.1.0 — 2026-10-09
 
