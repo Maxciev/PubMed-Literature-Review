@@ -38,10 +38,11 @@ below. There is no `references/` folder to read.
 ## Requirements
 
 - **PubMed access**, one of:
-  - the **PubMed connector** (preferred when present), or
+  - the **PubMed connector** (required on claude.ai), or
   - the bundled **`scripts/pubmed.py`** (NCBI E-utilities, Python standard library only), which needs code
-    execution with network access to `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov`.
-  Check early which one works (see Tools) rather than failing mid-workflow.
+    execution with network access to `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov`. That is the case
+    in Claude Code on the user's machine; the claude.ai code sandbox has been seen to refuse NCBI (HTTP 403).
+  Check which one works before anything else (see Tools) rather than failing mid-workflow.
 - **Optional:** a code-execution environment (Claude Code, Cowork, or any surface with bash + file output)
   for the Word `.docx` deliverable. Without it, the skill degrades gracefully to Markdown — see Phase 4.
 
@@ -49,9 +50,9 @@ below. There is no `references/` folder to read.
 
 ## Tools
 
-**Choose the backend once, at the start.** If the PubMed connector tools are available, use them. If not,
-use the bundled script (next subsection). If neither works, stop (see Error handling). Record the backend
-used in the audit log.
+**Choose the backend once, before any question to the user.** If the PubMed connector tools are available,
+use them. If not, probe the bundled script with one call (`search "<core topic>" --max 1`). If neither works,
+stop (see Error handling). Record the backend used in the audit log.
 
 **Always pass `sort=relevance`** (script: `--sort relevance`, the default) except for deliberate recency
 searches (`pub_date`). Without `sort`, the connector returns the **most recent** records first, so the top 20
@@ -192,9 +193,15 @@ consecutive failures, stop and tell the user what succeeded so far and ask how t
 skip a failed search — note it as a coverage gap.
 
 If neither the PubMed connector nor the script works (no connector, and no code execution or no network access
-to NCBI from it), stop immediately and tell the user the two options: enable the connector (`Settings` →
-`Connectors` → `PubMed`), or allow `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov` for code execution.
-Do not substitute another source (web search, memory).
+to NCBI from it), stop immediately, before Phase 1, and tell the user:
+
+1. **Recommended:** enable or reconnect the PubMed connector (`Settings` → `Connectors` → `PubMed`; no sign-in
+   needed), then start a **new conversation**: connector tools only load when a conversation starts.
+2. Or allow `eutils.ncbi.nlm.nih.gov` and `pmc.ncbi.nlm.nih.gov` for code execution, if their plan exposes a
+   network allowlist (on organization plans an admin controls it), or run the skill in Claude Code.
+
+Do not substitute another source (web search, memory, another literature connector) — the review's
+provenance depends on PubMed PMIDs and query translations.
 
 The connector can answer `RATE_LIMIT_EXCEEDED` with a `retryAfter`: wait that long, then retry; it does not
 count as a failure.

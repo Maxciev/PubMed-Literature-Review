@@ -3,8 +3,9 @@
 ## 1.2.0 — 2026-11-12
 
 ### Added
-- **Works without the PubMed connector.** The bundled `scripts/pubmed.py` queries PubMed through NCBI
-  E-utilities (search, metadata, PMID / PMCID / DOI conversion), Python standard library only. The skill
+- **Works without the PubMed connector where code execution can reach NCBI** (e.g. Claude Code on your
+  machine; not the claude.ai sandbox, which refused NCBI with HTTP 403 in testing). The bundled
+  `scripts/pubmed.py` queries PubMed through NCBI E-utilities (search, metadata, PMID / PMCID / DOI conversion), Python standard library only. The skill
   uses the connector when present and the script otherwise. Compared with the connector on five
   hand-surgery queries: same counts and PMIDs, same DOIs, titles, journals, authors and publication types
   on ten records.
@@ -21,6 +22,8 @@
   work on the connector and the script (tested on one query each). The skill now checks the translation
   instead of assuming the filter failed.
 - README: skill upload moved to `Customize` → `Skills` on claude.ai.
+- When no PubMed access works, the skill stops before Phase 1 and recommends reconnecting the connector and
+  starting a new conversation (tools load at conversation start).
 
 ## 1.1.0 — 2026-10-09
 

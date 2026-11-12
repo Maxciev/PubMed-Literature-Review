@@ -17,11 +17,13 @@ Built for clinicians and researchers who need depth and strategy, not a list of 
 
 - Claude with skills support (Claude Desktop or claude.ai)
 - PubMed access, either:
-  - the **PubMed connector** (recommended): `Settings` → `Connectors` → enable **PubMed**, or
-  - **code execution with network access to NCBI**: without the connector, the skill queries PubMed through
-    the bundled script [`scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py) (NCBI E-utilities,
-    Python standard library only). On claude.ai this may require allowing `eutils.ncbi.nlm.nih.gov` and
-    `pmc.ncbi.nlm.nih.gov` in the code-execution settings.
+  - the **PubMed connector** — **required on claude.ai**: `Settings` → `Connectors` → enable **PubMed**, then
+    start a new conversation; or
+  - **code execution with network access to NCBI**, e.g. Claude Code on your own machine: without the
+    connector, the skill queries PubMed through the bundled script
+    [`scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py) (NCBI E-utilities, Python standard
+    library only). The claude.ai code sandbox refused NCBI (HTTP 403) in testing, so the script does not
+    replace the connector there.
 
 ## Installation
 
