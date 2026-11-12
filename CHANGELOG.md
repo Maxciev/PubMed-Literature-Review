@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0 — 2026-11-12
+
+### Added
+- **Works without the PubMed connector.** The bundled `scripts/pubmed.py` queries PubMed through NCBI
+  E-utilities (search, metadata, PMID / PMCID / DOI conversion), Python standard library only. The skill
+  uses the connector when present and the script otherwise. Compared with the connector on five
+  hand-surgery queries: same counts and PMIDs, same DOIs, titles, journals, authors and publication types
+  on ten records.
+- The script returns the print year and the online-first date separately, which feeds the year check of
+  Phase 5.
+- Query-craft rules: check the query translation for gene-symbol hijacks ("cast" → POLR1G); check that date
+  filters appear in the translation; dedupe by PMID because relevance order is not stable.
+- Connector `RATE_LIMIT_EXCEEDED`: wait `retryAfter` and retry, not counted as a failure.
+
+### Fixed
+- **Searches are sorted by relevance.** Without `sort`, the connector returns the most recent records first;
+  the skill did not set it, so the top 20 of most searches were the newest papers, not the most relevant.
+- Removed the claims that date filters never work and that the endpoint has no pagination offset: both
+  work on the connector and the script (tested on one query each). The skill now checks the translation
+  instead of assuming the filter failed.
+
 ## 1.1.0 — 2026-10-09
 
 ### Fixed

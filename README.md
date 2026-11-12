@@ -16,8 +16,12 @@ Built for clinicians and researchers who need depth and strategy, not a list of 
 ## Requirements
 
 - Claude with skills support (Claude Desktop or claude.ai)
-- The **PubMed connector enabled** in your Claude settings — the skill will not work without it
-  - `Settings` → `Connectors` → enable **PubMed**
+- PubMed access, either:
+  - the **PubMed connector** (recommended): `Settings` → `Connectors` → enable **PubMed**, or
+  - **code execution with network access to NCBI**: without the connector, the skill queries PubMed through
+    the bundled script [`scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py) (NCBI E-utilities,
+    Python standard library only). On claude.ai this may require allowing `eutils.ncbi.nlm.nih.gov` and
+    `pmc.ncbi.nlm.nih.gov` in the code-execution settings.
 
 ## Installation
 
@@ -49,7 +53,7 @@ Claude runs a first reconnaissance search, proposes a PICO breakdown into five s
 
 ## Source
 
-The skill's instructions are in [`pubmed-literature-review/SKILL.md`](pubmed-literature-review/SKILL.md). The `.skill` file is the same folder zipped for upload.
+The skill's instructions are in [`pubmed-literature-review/SKILL.md`](pubmed-literature-review/SKILL.md). The fallback PubMed client is in [`pubmed-literature-review/scripts/pubmed.py`](pubmed-literature-review/scripts/pubmed.py). The `.skill` file is the same folder zipped for upload.
 
 ## Changelog
 
